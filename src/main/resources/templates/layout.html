@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Almacén ERP</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <style type="text/tailwindcss">
+      [x-cloak] {
+        display: none !important;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+
+      @theme {
+        --color-brand: #3b82f6;
+      }
+      @layer base {
+        body {
+          @apply bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden;
+        }
+      }
+
+      /* Estilos para el Cargador Global de HTMX */
+      .htmx-indicator {
+        opacity: 0;
+        transition: opacity 200ms ease-in;
+      }
+      .htmx-request .htmx-indicator,
+      .htmx-request.htmx-indicator {
+        opacity: 1;
+      }
+
+      @keyframes loading-bar {
+        0% {
+          transform: translateX(-100%);
+        }
+        50% {
+          transform: translateX(-30%);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+      .loading-bar-animation {
+        animation: loading-bar 2s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body class="h-screen flex" x-data="{ sidebarOpen: false }">
+    <!-- Barra de Carga Global (Top Loader) -->
+    <div
+      class="fixed top-0 left-0 w-full h-1 z-[999] pointer-events-none overflow-hidden"
+    >
+      <div
+        class="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] w-full -translate-x-full htmx-indicator loading-bar-animation"
+        id="global-loader"
+      ></div>
+    </div>
+    <!-- Overlay para Móviles -->
+    <div
+      x-show="sidebarOpen"
+      x-transition.opacity
+      class="fixed inset-0 bg-black/80 z-40 md:hidden"
+      @click="sidebarOpen = false"
+      x-cloak
+    ></div>
+
+    <!-- Sidebar Fijo / Deslizable -->
+    <aside
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="w-72 border-r border-white/5 bg-slate-950 flex flex-col h-full flex-shrink-0 fixed md:static inset-y-0 left-0 z-50 transition-transform duration-300 md:translate-x-0"
+    >
+      <div class="p-8 flex justify-between items-center">
+        <a href="/" class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20"
+          >
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+          </div>
+          <span class="text-2xl font-black tracking-tighter"
+            >Almacén <span class="text-blue-500">ERP</span></span
+          >
+        </a>
+        <button
+          @click="sidebarOpen = false"
+          class="md:hidden text-slate-400 hover:text-white"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="flex-1 px-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <div
+          class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-4"
+        >
+          Navegación
+        </div>
+        <a
+          href="/dashboard"
+          th:class="${module == 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            ></path>
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="/inventario"
+          th:class="${module == 'inventario' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+            ></path>
+          </svg>
+          Inventario
+        </a>
+        <a
+          href="/categorias"
+          th:class="${module == 'categorias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            ></path>
+          </svg>
+          Categorías
+        </a>
+        <a
+          href="/proveedores"
+          th:class="${module == 'proveedores' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            ></path>
+          </svg>
+          Proveedores
+        </a>
+
+        <div
+          class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4 mt-6"
+        >
+          Ventas
+        </div>
+        <a
+          href="/clientes"
+          th:class="${module == 'clientes' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            ></path>
+          </svg>
+          Clientes
+        </a>
+        <a
+          href="/ventas"
+          th:class="${module == 'ventas' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'} + ' flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold'"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+            ></path>
+          </svg>
+          Punto de Venta
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Área de Contenido Principal -->
+    <main
+      class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950 min-w-0"
+    >
+      <header
+        class="h-20 border-b border-white/5 flex items-center justify-between px-6 md:px-10 bg-slate-950/80 backdrop-blur-xl z-30 flex-shrink-0"
+      >
+        <div class="flex items-center gap-4">
+          <button
+            @click="sidebarOpen = true"
+            class="md:hidden text-slate-400 hover:text-white p-2 -ml-2 rounded-xl hover:bg-white/5"
+          >
+            <svg
+              class="w-7 h-7"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+          <div class="flex flex-col">
+            <span
+              class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]"
+              th:text="${module}"
+              >MÓDULO</span
+            >
+            <span class="text-white font-bold text-lg md:text-xl"
+              >Panel de Control</span
+            >
+          </div>
+        </div>
+        <div class="flex items-center gap-6">
+          <div
+            class="w-10 h-10 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+          </div>
+          <div
+            class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-white/10 shadow-lg"
+          ></div>
+        </div>
+      </header>
+
+      <!-- Contenido Dinámico con Scroll Interno -->
+      <div
+        class="flex-1 overflow-y-auto custom-scrollbar p-10"
+        id="main-content"
+      >
+        <div th:if="${view}" th:replace="~{__${view}__}"></div>
+
+        <!-- Footer ahora está AQUÍ, al final del contenido -->
+        <footer class="mt-20 py-10 border-t border-white/5 text-center">
+          <p class="text-slate-600 text-xs font-bold uppercase tracking-widest">
+            &copy; 2026 Almacén — Proyecto Universitario Grupo Temporal
+          </p>
+        </footer>
+      </div>
+    </main>
+
+    <!-- Sistema de Notificaciones Dinámico (Toast) -->
+    <div
+      id="toast-container"
+      x-data="{ 
+        show: false, 
+        message: '', 
+        type: 'success',
+        timer: null
+      }"
+      @show-toast.window="
+        message = $event.detail.value || $event.detail.message;
+        type = $event.detail.type || 'success';
+        show = true;
+        if(timer) clearTimeout(timer);
+        timer = setTimeout(() => show = false, 4000);
+      "
+      x-show="show"
+      x-cloak
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 translate-y-10 scale-95"
+      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+      x-transition:leave-end="opacity-0 translate-y-10 scale-95"
+      class="fixed bottom-10 right-10 z-[999] font-bold pointer-events-none"
+    >
+      <div class="px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 backdrop-blur-xl border border-white/10"
+           :class="type === 'success' ? 'bg-blue-600/90 text-white' : 'bg-red-600/90 text-white'">
+        
+        <!-- Icono Éxito -->
+        <svg x-show="type === 'success'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+        </svg>
+
+        <!-- Icono Error -->
+        <svg x-show="type === 'error'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+
+        <span x-text="message">Operación exitosa</span>
+      </div>
+    </div>
+
+    <script>
+      document.body.addEventListener("htmx:afterSwap", () => {
+        if (typeof initFlowbite === "function") initFlowbite();
+      });
+    </script>
+  </body>
+</html>

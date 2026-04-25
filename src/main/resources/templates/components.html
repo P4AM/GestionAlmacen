@@ -1,0 +1,297 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!-- ERP_CARD -->
+    <div
+      th:fragment="erp_card(title, subtitle, content)"
+      class="bg-slate-900/60 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-sm"
+    >
+      <div th:if="${title != null}" class="mb-8 border-b border-white/5 pb-6">
+        <h3
+          class="text-xl font-extrabold text-white tracking-tight"
+          th:text="${title}"
+        >
+          Título
+        </h3>
+        <p
+          th:if="${subtitle != null}"
+          class="text-sm text-slate-400 mt-1"
+          th:text="${subtitle}"
+        >
+          Subtítulo
+        </p>
+      </div>
+      <div th:insert="${content}"></div>
+    </div>
+
+    <!-- ERP_INPUT (CORREGIDO PARA BINDING) -->
+    <div
+      th:fragment="erp_input(label, fieldName, placeholder, type)"
+      class="relative group"
+    >
+      <input
+        th:field="*{__${fieldName}__}"
+        th:type="${type ?: 'text'}"
+        placeholder=" "
+        th:classappend="${#fields.hasErrors(fieldName)} ? 'border-red-500 ring-2 ring-red-500/20' : 'border-white/10 focus:border-blue-500 hover:bg-slate-900 focus:bg-slate-950'"
+        class="peer w-full bg-slate-950 border rounded-2xl px-5 pt-7 pb-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-medium shadow-inner shadow-black/50"
+      />
+      <label
+        th:for="${#strings.replace(fieldName, '.', '_')}"
+        th:text="${label}"
+        class="absolute text-slate-400 font-bold uppercase tracking-wider left-5 top-5 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-5 peer-placeholder-shown:text-sm peer-placeholder-shown:normal-case peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-blue-500 peer-focus:uppercase peer-valid:top-2 peer-valid:text-[10px] peer-valid:uppercase [input:not(:placeholder-shown)~&]:top-2 [input:not(:placeholder-shown)~&]:text-[10px] [input:not(:placeholder-shown)~&]:uppercase"
+      >
+      </label>
+      <div
+        th:if="${#fields.hasErrors(fieldName)}"
+        class="absolute -bottom-5 left-2 flex items-center gap-1"
+      >
+        <span
+          class="text-[10px] text-red-400 font-black uppercase tracking-tighter"
+          th:errors="*{__${fieldName}__}"
+          >Error</span
+        >
+      </div>
+    </div>
+
+    <!-- ERP_SELECT (ESTILO PRIMENG - DUAL PC/MOBILE) -->
+    <div
+      th:fragment="erp_select(label, fieldName, options, valueExpr, textExpr)"
+      class="relative"
+      x-data="{ 
+            open: false, 
+            search: '', 
+            selectedId: '', 
+            selectedText: 'Seleccionar...',
+            allOptions: [],
+            isMobile: window.innerWidth < 768,
+            
+            init() {
+                this.allOptions = Array.from(this.$refs.hiddenData.querySelectorAll('li')).map(li => ({
+                    id: li.dataset.id,
+                    text: li.innerText.trim()
+                }));
+                // Capturar valor inicial de Spring
+                this.selectedId = this.$refs.realInput.value || '';
+                let initial = this.allOptions.find(o => o.id == this.selectedId);
+                if(initial) this.selectedText = initial.text;
+
+                window.addEventListener('resize', () => this.isMobile = window.innerWidth < 768);
+            },
+            get filteredOptions() {
+                if(!this.search) return this.allOptions;
+                return this.allOptions.filter(o => o.text.toLowerCase().includes(this.search.toLowerCase()));
+            },
+            select(option) {
+                this.selectedId = option.id;
+                this.selectedText = option.text;
+                this.$refs.realInput.value = option.id;
+                // Disparar evento de cambio para que Spring/HTMX se enteren si es necesario
+                this.$refs.realInput.dispatchEvent(new Event('change'));
+                this.open = false;
+                this.search = '';
+            }
+         }"
+      @click.away="open = false"
+    >
+      <label
+        class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1.5 ml-1"
+        th:text="${label}"
+        >Label</label
+      >
+
+      <!-- Almacén de datos oculto -->
+      <ul x-ref="hiddenData" class="hidden">
+        <li
+          th:each="opt : ${options}"
+          th:attr="data-id=${opt[valueExpr]}"
+          th:text="${opt[textExpr]}"
+        ></li>
+      </ul>
+
+      <!-- INPUT REAL PARA SPRING BINDING -->
+      <input type="hidden" th:field="*{__${fieldName}__}" x-ref="realInput" />
+
+      <!-- BOTÓN DISPARADOR -->
+      <button
+        type="button"
+        @click="open = !open; if(open) $nextTick(() => $refs.searchInput?.focus())"
+        class="bg-slate-950 border border-white/10 text-white text-base rounded-2xl focus:ring-4 focus:ring-blue-500/10 w-full p-4.5 flex justify-between items-center transition-all outline-none hover:border-white/20 active:scale-[0.99]"
+      >
+        <span
+          x-text="selectedText"
+          :class="selectedId === '' ? 'text-slate-600' : 'text-white'"
+          class="font-medium truncate mr-2"
+        ></span>
+        <svg
+          class="w-5 h-5 text-slate-500 transition-transform duration-300 flex-shrink-0"
+          :class="open ? 'rotate-180 text-blue-500' : ''"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2.5"
+            d="M19 9l-7 7-7-7"
+          ></path>
+        </svg>
+      </button>
+
+      <!-- DESPLEGABLE (PC) -->
+      <template x-if="!isMobile">
+        <div
+          x-show="open"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-100"
+          x-transition:leave-start="opacity-100 scale-100"
+          x-transition:leave-end="opacity-0 scale-95"
+          class="absolute z-[100] mt-2 w-full bg-slate-900 border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-xl"
+          x-cloak
+        >
+          <div class="p-3 border-b border-white/5">
+            <input
+              type="text"
+              x-ref="searchInput"
+              x-model="search"
+              placeholder="Buscar..."
+              class="w-full bg-slate-950 border border-white/5 text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-blue-500/50 transition-all"
+            />
+          </div>
+
+          <ul class="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+            <template x-for="option in filteredOptions" :key="option.id">
+              <li>
+                <button
+                  type="button"
+                  @click="select(option)"
+                  class="w-full text-left px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-between group"
+                  :class="selectedId == option.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/5'"
+                >
+                  <span x-text="option.text"></span>
+                  <svg
+                    x-show="selectedId == option.id"
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="3"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                </button>
+              </li>
+            </template>
+            <li
+              x-show="filteredOptions.length === 0"
+              class="p-4 text-center text-slate-500 text-xs italic"
+            >
+              No se encontraron resultados
+            </li>
+          </ul>
+        </div>
+      </template>
+
+      <!-- MODAL (MOBILE) -->
+      <template x-if="isMobile">
+        <div
+          x-show="open"
+          class="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-sm"
+          x-cloak
+        >
+          <div
+            x-show="open"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="translate-y-full opacity-0"
+            x-transition:enter-end="translate-y-0 opacity-100"
+            class="w-full max-w-lg bg-slate-900 rounded-t-[2rem] sm:rounded-[2rem] border border-white/10 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl"
+          >
+            <div
+              class="p-6 border-b border-white/5 flex items-center justify-between"
+            >
+              <h3
+                class="text-white font-black uppercase tracking-widest text-xs"
+                th:text="${label}"
+              >
+                Seleccionar
+              </h3>
+              <button
+                @click="open = false"
+                class="p-2 text-slate-400 hover:text-white bg-white/5 rounded-full"
+              >
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="p-6">
+              <input
+                type="text"
+                x-model="search"
+                placeholder="Escribe para buscar..."
+                class="w-full bg-slate-950 border border-white/10 text-white text-lg rounded-2xl p-5 outline-none focus:border-blue-500 shadow-inner"
+              />
+            </div>
+
+            <ul class="flex-1 overflow-y-auto px-6 pb-12 space-y-2">
+              <template x-for="option in filteredOptions" :key="option.id">
+                <li>
+                  <button
+                    type="button"
+                    @click="select(option)"
+                    class="w-full text-left px-6 py-5 rounded-2xl transition-all flex items-center justify-between font-bold"
+                    :class="selectedId == option.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-300'"
+                  >
+                    <span x-text="option.text"></span>
+                    <svg
+                      x-show="selectedId == option.id"
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="3"
+                        d="M5 13l4 4L19 7"
+                      ></path>
+                    </svg>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- ERP_BADGE -->
+    <span
+      th:fragment="erp_badge(text, color)"
+      th:text="${text}"
+      th:class="'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ' + 
+               (${color == 'blue'} ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+               (${color == 'red'} ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
+               'bg-slate-500/10 text-slate-400 border-slate-500/20'))"
+    ></span>
+  </body>
+</html>

@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div
+      th:fragment="main"
+      class="space-y-6"
+      x-data="posSystem()"
+      x-init="setTimeout(() => show = true, 50)"
+    >
+      <!-- Header POS -->
+      <header
+        class="flex justify-between items-center border-b border-white/5 pb-6"
+        x-show="show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-cloak
+      >
+        <div class="flex items-center gap-4">
+          <a
+            href="/ventas"
+            class="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              ></path>
+            </svg>
+          </a>
+          <div>
+            <h2 class="text-3xl font-black text-white tracking-tighter">
+              Terminal de Venta
+            </h2>
+            <p class="text-slate-500 text-sm font-medium">
+              Nueva orden de salida
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <p
+              class="text-[10px] font-black text-slate-500 uppercase tracking-widest"
+            >
+              Total a Pagar
+            </p>
+            <p
+              class="text-3xl font-black text-emerald-400"
+              x-text="'S/ ' + total.toLocaleString('es-PE', {minimumFractionDigits: 2})"
+            ></p>
+          </div>
+          <button
+            @click="procesarVenta()"
+            :disabled="cart.length === 0 || !selectedClient || isProcessing"
+            class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-10 rounded-2xl transition-all shadow-xl shadow-blue-600/20 disabled:opacity-30 disabled:grayscale group flex items-center gap-3"
+          >
+            <span
+              x-show="isProcessing"
+              class="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"
+            ></span>
+            <span
+              x-text="isProcessing ? 'PROCESANDO...' : 'FINALIZAR VENTA'"
+            ></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Columna Izquierda: Catálogo Interactivo -->
+        <div class="lg:col-span-8 space-y-6">
+          <!-- Buscador y Filtros -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="relative group">
+              <div
+                class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-500 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                x-model="search"
+                placeholder="Buscar por nombre o código..."
+                class="w-full bg-slate-900 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+              />
+            </div>
+
+            <div class="relative">
+              <select
+                x-model="selectedClient"
+                class="w-full bg-slate-900 border border-white/5 rounded-2xl px-4 py-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+              >
+                <option value="">👤 Seleccionar Cliente...</option>
+                <option
+                  th:each="c : ${clientes}"
+                  th:value="${c.id}"
+                  th:text="${c.nombre}"
+                ></option>
+              </select>
+              <div
+                class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-500"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid de Productos Visual -->
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
+          >
+            <template x-for="p in filteredProducts" :key="p.id">
+              <div
+                @click="addToCart(p)"
+                class="group bg-slate-900 border border-white/5 rounded-3xl p-3 cursor-pointer hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all active:scale-95 relative overflow-hidden"
+              >
+                <!-- Badge de Stock -->
+                <div
+                  class="absolute top-4 right-4 z-10 px-2 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md border border-white/5 text-[9px] font-black uppercase tracking-widest text-slate-400"
+                >
+                  Stock:
+                  <span
+                    x-text="p.stock"
+                    :class="p.stock < 10 ? 'text-red-400' : 'text-emerald-400'"
+                  ></span>
+                </div>
+
+                <!-- Imagen del Producto -->
+                <div
+                  class="aspect-square rounded-2xl bg-slate-950 mb-3 overflow-hidden border border-white/5"
+                >
+                  <template x-if="p.imagenUrl">
+                    <img
+                      :src="p.imagenUrl"
+                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </template>
+                  <template x-if="!p.imagenUrl">
+                    <div
+                      class="w-full h-full flex items-center justify-center text-slate-700"
+                    >
+                      <svg
+                        class="w-12 h-12"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1"
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        ></path>
+                      </svg>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="space-y-1">
+                  <h4
+                    class="text-sm font-bold text-white truncate"
+                    x-text="p.nombre"
+                  ></h4>
+                  <p
+                    class="text-xs text-slate-500 font-medium"
+                    x-text="p.categoria.nombre"
+                  ></p>
+                  <div class="pt-2 flex justify-between items-center">
+                    <span
+                      class="text-lg font-black text-emerald-400"
+                      x-text="'S/ ' + parseFloat(p.precio).toFixed(2)"
+                    ></span>
+                    <div
+                      class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 4v16m8-8H4"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Detalle de Venta -->
+        <div
+          class="lg:col-span-4 bg-slate-900 border border-white/5 rounded-[2rem] p-6 flex flex-col h-[75vh] sticky top-6"
+        >
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-black text-white tracking-tighter">
+              Tu Pedido
+            </h3>
+            <span
+              class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest"
+              x-text="cart.length + ' Items'"
+            ></span>
+          </div>
+
+          <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+            <template x-for="(item, index) in cart" :key="item.id">
+              <div
+                class="bg-slate-950 p-4 rounded-2xl border border-white/5 group hover:border-blue-500/30 transition-all"
+              >
+                <div class="flex gap-4">
+                  <div
+                    class="w-16 h-16 rounded-xl bg-slate-900 overflow-hidden border border-white/5 flex-shrink-0"
+                  >
+                    <img
+                      x-show="item.imagenUrl"
+                      :src="item.imagenUrl"
+                      class="w-full h-full object-cover"
+                    />
+                    <div
+                      x-show="!item.imagenUrl"
+                      class="w-full h-full flex items-center justify-center text-slate-700"
+                    >
+                      <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-start mb-2">
+                      <h5
+                        class="font-bold text-white text-sm truncate"
+                        x-text="item.nombre"
+                      ></h5>
+                      <button
+                        @click="removeFromCart(index)"
+                        class="text-slate-600 hover:text-red-400 transition-colors p-1"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          ></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <div
+                        class="flex items-center gap-3 bg-slate-900 rounded-xl p-1 border border-white/5"
+                      >
+                        <button
+                          @click="updateQuantity(index, -1)"
+                          class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                        >
+                          -
+                        </button>
+                        <span
+                          class="text-sm font-black text-white w-4 text-center"
+                          x-text="item.cantidad"
+                        ></span>
+                        <button
+                          @click="updateQuantity(index, 1)"
+                          class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span
+                        class="text-emerald-400 font-black text-sm"
+                        x-text="'S/ ' + (item.precio * item.cantidad).toFixed(2)"
+                      ></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div
+              x-show="cart.length === 0"
+              class="flex flex-col items-center justify-center py-20 text-slate-600 text-center"
+            >
+              <svg
+                class="w-16 h-16 mb-4 opacity-20"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1"
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                ></path>
+              </svg>
+              <p class="font-bold text-sm uppercase tracking-widest">
+                Carrito Vacío
+              </p>
+            </div>
+          </div>
+
+          <!-- Footer del Carrito -->
+          <div class="mt-6 pt-6 border-t border-white/5 space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 font-medium">Subtotal</span>
+              <span
+                class="text-white font-bold"
+                x-text="'S/ ' + total.toFixed(2)"
+              ></span>
+            </div>
+            <div
+              class="flex justify-between items-center p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20"
+            >
+              <span
+                class="text-blue-400 font-black text-sm uppercase tracking-widest"
+                >Total Final</span
+              >
+              <span
+                class="text-2xl font-black text-white"
+                x-text="'S/ ' + total.toFixed(2)"
+              ></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script th:inline="javascript">
+        /*<![CDATA[*/
+        function posSystem() {
+          return {
+            show: false,
+            isProcessing: false,
+            search: "",
+            selectedClient: "",
+            cart: [],
+            products: /*[[${productos}]]*/ [],
+
+            get filteredProducts() {
+              if (!this.search) return this.products;
+              const s = this.search.toLowerCase();
+              return this.products.filter(
+                (p) =>
+                  p.nombre.toLowerCase().includes(s) ||
+                  p.categoria.nombre.toLowerCase().includes(s),
+              );
+            },
+
+            get total() {
+              return this.cart.reduce(
+                (sum, item) => sum + item.precio * item.cantidad,
+                0,
+              );
+            },
+
+            addToCart(p) {
+              const existing = this.cart.find((item) => item.id === p.id);
+              if (existing) {
+                if (existing.cantidad < p.stock) {
+                  existing.cantidad++;
+                } else {
+                  this.$dispatch("show-toast", {
+                    message: "Stock máximo alcanzado",
+                    type: "error",
+                  });
+                }
+              } else {
+                this.cart.push({
+                  id: p.id,
+                  nombre: p.nombre,
+                  precio: p.precio,
+                  stock: p.stock,
+                  imagenUrl: p.imagenUrl,
+                  cantidad: 1,
+                });
+              }
+            },
+
+            updateQuantity(index, delta) {
+              const item = this.cart[index];
+              const newQ = item.cantidad + delta;
+              if (newQ > 0 && newQ <= item.stock) {
+                item.cantidad = newQ;
+              } else if (newQ === 0) {
+                this.removeFromCart(index);
+              } else {
+                this.$dispatch("show-toast", {
+                  message: "Stock insuficiente",
+                  type: "error",
+                });
+              }
+            },
+
+            removeFromCart(index) {
+              this.cart.splice(index, 1);
+            },
+
+            async procesarVenta() {
+              if (
+                !this.selectedClient ||
+                this.cart.length === 0 ||
+                this.isProcessing
+              )
+                return;
+              this.isProcessing = true;
+
+              const orden = {
+                cliente: { id: parseInt(this.selectedClient) },
+                total: this.total,
+                detalles: this.cart.map((item) => ({
+                  producto: { id: item.id },
+                  cantidad: item.cantidad,
+                  precioUnitario: item.precio,
+                  subtotal: item.precio * item.cantidad,
+                })),
+              };
+
+              try {
+                const response = await fetch("/ventas/procesar", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(orden),
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                  window.location.href = "/ventas";
+                } else {
+                  this.$dispatch("show-toast", {
+                    message: result.message,
+                    type: "error",
+                  });
+                }
+              } catch (error) {
+                this.$dispatch("show-toast", {
+                  message: "Error de red",
+                  type: "error",
+                });
+              } finally {
+                this.isProcessing = false;
+              }
+            },
+          };
+        }
+        /*]]>*/
+      </script>
+
+      <style>
+        [x-cloak] {
+          display: none !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      </style>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div
+      th:fragment="category-list"
+      id="category-list-container"
+      class="space-y-4 transition-opacity duration-300 [&.htmx-request]:opacity-50"
+    >
+      <!-- Actualizar el contador en el header del index (Oculto) -->
+      <div
+        id="total-categories-count"
+        hx-swap-oob="true"
+        th:text="${totalCategorias}"
+        class="hidden"
+      >
+        0
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          th:each="c : ${categorias}"
+          class="group border p-5 rounded-2xl transition-all hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] flex justify-between items-center animate-in fade-in zoom-in duration-300"
+          th:classappend="${c.activo ? 'bg-slate-950/40 border-white/5 hover:border-blue-500/30' : 'bg-slate-900/10 border-white/5 opacity-60 grayscale-[0.5]'}"
+        >
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <h4 class="text-white font-bold text-lg" th:text="${c.nombre}">
+                Categoría
+              </h4>
+              <span
+                th:if="${!c.activo}"
+                class="text-[8px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 uppercase tracking-tighter"
+                >Inactiva</span
+              >
+            </div>
+            <p
+              class="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1"
+            >
+              <span th:text="${c.productos?.size() ?: 0}">0</span> Productos
+              vinculados
+            </p>
+          </div>
+
+          <div
+            class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <button
+              th:hx-get="'/categorias/edit/' + ${c.id}"
+              hx-target="#category-form"
+              hx-swap="outerHTML"
+              class="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                ></path>
+              </svg>
+            </button>
+            <button
+              th:hx-delete="'/categorias/delete/' + ${c.id}"
+              hx-target="#category-list-container"
+              hx-swap="outerHTML"
+              th:hx-confirm="${c.activo ? '¿Estás seguro de desactivar esta categoría?' : '¿Quieres reactivar esta categoría?'}"
+              class="p-2 rounded-lg transition-all"
+              th:classappend="${c.activo ? 'text-slate-400 hover:text-red-400 hover:bg-red-500/10' : 'text-green-400 hover:bg-green-500/10'}"
+            >
+              <!-- Icono Prohibido para desactivar, Check para activar -->
+              <svg
+                th:if="${c.activo}"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"
+                ></path>
+              </svg>
+              <svg
+                th:if="${!c.activo}"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        th:if="${#lists.isEmpty(categorias)}"
+        class="text-center py-20 bg-slate-950/20 rounded-3xl border border-dashed border-white/10"
+      >
+        <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">
+          No hay categorías registradas
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

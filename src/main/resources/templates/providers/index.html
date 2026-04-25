@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="main" class="space-y-10">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-900 border border-white/5 rounded-3xl p-6 flex items-center gap-5">
+                <div class="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-400">Total Proveedores</p>
+                    <h4 id="stat-total" class="text-2xl font-bold" th:text="${totalProveedores}">0</h4>
+                </div>
+            </div>
+        </div>
+
+        <header class="border-b border-white/5 pb-6">
+            <h2 class="text-3xl font-bold">Gestión de Proveedores</h2>
+            <p class="text-slate-400 mt-1">Directorio de socios comerciales y proveedores estratégicos.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <!-- Formulario (Columna Lateral) -->
+            <aside class="lg:col-span-1 space-y-6">
+                <div class="bg-slate-900 border border-white/5 rounded-3xl p-8">
+                    <h3 class="text-xl font-bold mb-6">Nuevo Proveedor</h3>
+                    <div th:replace="~{providers/form :: provider-form}"></div>
+                </div>
+            </aside>
+
+            <!-- Lista de Proveedores (Columna Principal) -->
+            <section class="lg:col-span-2 space-y-6">
+                <div class="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
+                    <input type="text" 
+                           name="q" 
+                           placeholder="Buscar por nombre o RUC..." 
+                           class="w-full bg-transparent border-none focus:ring-0 px-4 py-2 text-white"
+                           hx-get="/proveedores/search"
+                           hx-target="#provider-list"
+                           hx-trigger="keyup changed delay:300ms">
+                    <div class="px-4 text-slate-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
+
+                <div id="provider-list" hx-get="/proveedores/search" hx-trigger="load">
+                    <!-- Cargado por HTMX -->
+                    <div class="flex justify-center p-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

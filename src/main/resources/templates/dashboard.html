@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div th:fragment="main" class="space-y-8">
+      <!-- Dashboard Header -->
+      <div>
+        <h2 class="text-3xl font-bold text-white">Panel de Control</h2>
+        <p class="text-slate-400 mt-1">
+          Resumen ejecutivo del estado de tu inventario.
+        </p>
+      </div>
+
+      <!-- Metrics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-panel p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 font-medium">Productos Totales</p>
+          <p
+            class="text-2xl font-bold text-white mt-1"
+            th:text="${totalProductos}"
+          >
+            0
+          </p>
+        </div>
+
+        <div class="glass-panel p-6 border-l-4 border-yellow-500/50">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-yellow-500/10 rounded-lg text-yellow-400">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 font-medium">Stock Crítico</p>
+          <p class="text-2xl font-bold text-white mt-1" th:text="${stockBajo}">
+            0
+          </p>
+        </div>
+
+        <div class="glass-panel p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 font-medium">Valor Inventario</p>
+          <p class="text-2xl font-bold text-white mt-1">
+            S/
+            <span
+              th:text="${#numbers.formatDecimal(valorTotal, 1, 'COMMA', 2, 'POINT')}"
+              >0.00</span
+            >
+          </p>
+        </div>
+
+        <div class="glass-panel p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 font-medium">Categorías</p>
+          <p
+            class="text-2xl font-bold text-white mt-1"
+            th:text="${totalCategorias}"
+          >
+            0
+          </p>
+        </div>
+      </div>
+
+      <!-- Alerta de Stock Crítico -->
+      <div
+        th:if="${not #lists.isEmpty(productosBajos)}"
+        x-data="{ show: false }"
+        x-init="setTimeout(() => show = true, 300)"
+        x-show="show"
+        x-transition:enter="transition ease-out duration-500"
+        x-transition:enter-start="opacity-0 -translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+      >
+        <div
+          th:replace="~{components :: erp_card('Productos con Stock Crítico', 'Se requiere reposición inmediata', ~{::critico_list})}"
+        >
+          <div th:fragment="critico_list" class="overflow-x-auto">
+            <div class="flex justify-end mb-4">
+              <a
+                href="/reportes/pdf/stock-critico"
+                target="_blank"
+                class="flex items-center gap-2 text-[10px] font-black text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl transition-all shadow-lg shadow-red-600/20"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                EXPORTAR PDF
+              </a>
+            </div>
+            <table class="w-full text-left">
+              <thead>
+                <tr
+                  class="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5"
+                >
+                  <th class="pb-4">Producto</th>
+                  <th class="pb-4">Categoría</th>
+                  <th class="pb-4 text-center">Stock</th>
+                  <th class="pb-4 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5">
+                <tr th:each="p : ${productosBajos}" class="group">
+                  <td
+                    class="py-4 font-bold text-slate-200"
+                    th:text="${p.nombre}"
+                  >
+                    Producto
+                  </td>
+                  <td class="py-4">
+                    <span
+                      class="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-white/5"
+                      th:text="${p.categoria.nombre}"
+                      >Cat</span
+                    >
+                  </td>
+                  <td class="py-4 text-center">
+                    <span class="text-red-400 font-black" th:text="${p.stock}"
+                      >0</span
+                    >
+                  </td>
+                  <td class="py-4 text-right">
+                    <a
+                      href="/inventario"
+                      class="text-[10px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-tighter bg-blue-400/10 px-3 py-1.5 rounded-lg transition-all"
+                      >Gestionar</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div
+          th:replace="~{components :: erp_card('Stock por Categoría', 'Distribución visual de existencias', ~{::cat_chart})}"
+        >
+          <div th:fragment="cat_chart" class="h-[350px]">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <div
+          th:replace="~{components :: erp_card('Tendencia de Movimientos', 'Análisis de entradas y salidas (6 meses)', ~{::trend_chart})}"
+        >
+          <div th:fragment="trend_chart" class="h-[350px]">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <script th:inline="javascript">
+        /* Data from Spring with safety guards */
+        const stockData = [[${stockPorCategoria}]] || {};
+        const labels = Object.keys(stockData);
+        const values = Object.values(stockData);
+
+        const tendenciaData = [[${tendencia}]] || [];
+        const trendLabels = tendenciaData.map(row => row[0]);
+        const trendEntradas = tendenciaData.map(row => row[1]);
+        const trendSalidas = tendenciaData.map(row => row[2]);
+
+        // Category Chart
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#94a3b8', padding: 20, usePointStyle: true }
+                    }
+                }
+            }
+        });
+
+        // Trend Chart (Real data from DB)
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: trendLabels.length > 0 ? trendLabels : ['Sin datos'],
+                datasets: [
+                    {
+                        label: 'Entradas',
+                        data: trendEntradas.length > 0 ? trendEntradas : [0],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Salidas',
+                        data: trendSalidas.length > 0 ? trendSalidas : [0],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+      </script>
+    </div>
+  </body>
+</html>

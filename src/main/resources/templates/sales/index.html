@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="main" class="space-y-10">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-900 border border-white/5 rounded-3xl p-6 flex items-center gap-5">
+                <div class="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-400">Total Órdenes</p>
+                    <h4 class="text-2xl font-bold" th:text="${totalOrdenes}">0</h4>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-white/5 rounded-3xl p-6 flex items-center gap-5">
+                <div class="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-400">Ingresos Totales</p>
+                    <h4 class="text-2xl font-bold text-emerald-400" th:text="${#numbers.formatDecimal(totalIngresos, 1, 'COMMA', 2, 'POINT')}">$0.00</h4>
+                </div>
+            </div>
+        </div>
+
+        <header class="border-b border-white/5 pb-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold">Registro de Ventas</h2>
+                <p class="text-slate-400 mt-1">Historial de órdenes y punto de venta.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/reportes/excel/ventas" class="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-600/20 font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Exportar Excel
+                </a>
+                <a href="/ventas/nueva" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Nueva Venta
+                </a>
+            </div>
+        </header>
+
+        <div class="bg-slate-900 border border-white/5 rounded-3xl overflow-hidden">
+            <div th:if="${ordenes.empty}" class="text-center py-16 bg-white/5 rounded-3xl border border-white/5 border-dashed m-4">
+                <svg class="mx-auto h-12 w-12 text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3 class="text-sm font-medium text-white">No hay ventas registradas</h3>
+                <p class="mt-1 text-sm text-slate-500">Realiza tu primera venta para verla aquí.</p>
+            </div>
+
+            <table th:unless="${ordenes.empty}" class="min-w-full divide-y divide-white/5">
+                <thead class="bg-slate-950/50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">ID Orden</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Cliente</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 bg-transparent">
+                    <tr th:each="o : ${ordenes}" class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-bold text-white">#<span th:text="${o.id}"></span></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-slate-300" th:text="${#temporals.format(o.fecha, 'dd/MM/yyyy HH:mm')}"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-slate-300" th:text="${o.cliente.nombre}"></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span th:if="${o.estado == 'COMPLETADA'}" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-500/10 text-emerald-400">
+                                Completada
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-white">
+                            S/.<span th:text="${#numbers.formatDecimal(o.total, 1, 'COMMA', 2, 'POINT')}"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

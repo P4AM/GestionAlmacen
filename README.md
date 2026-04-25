@@ -2,7 +2,7 @@
 
 Este proyecto ha sido desarrollado como solución integral para la gestión de almacenes, enfocándose en la eficiencia operativa, la integridad de los datos y una experiencia de usuario optimizada. El sistema permite el control total sobre el inventario, la relación con proveedores y la ejecución de ventas en tiempo real.
 
-## 📋 Funcionalidades del Sistema
+## Funcionalidades del Sistema
 
 El software se divide en módulos estratégicos diseñados para cubrir las necesidades reales de una organización:
 
@@ -29,7 +29,7 @@ Generación de documentos para la toma de decisiones:
 *   **Exportación a Excel:** Reportes detallados para análisis de datos masivos.
 *   **Reportes PDF:** Documentos de inventario crítico listos para impresión y auditoría.
 
-## 🛠️ Stack Tecnológico y Arquitectura
+## Stack Tecnológico y Arquitectura
 
 Para garantizar la escalabilidad y el rendimiento del sistema, se han seleccionado las siguientes tecnologías:
 
@@ -38,7 +38,7 @@ Para garantizar la escalabilidad y el rendimiento del sistema, se han selecciona
 *   **Frontend Reactivo:** Implementación de **HTMX** para comunicaciones asíncronas servidor-cliente y **Alpine.js** para la lógica de estados en el navegador. Esta combinación permite una experiencia similar a una Single Page Application (SPA) pero con una carga inicial mucho más ligera.
 *   **Interfaz Visual:** Diseño basado en **Vanilla CSS** con principios de ergonomía visual (Modo Oscuro) y efectos de transparencia moderna (Glassmorphism).
 
-## 🚀 Guía de Operación
+## Guía de Operación
 
 1.  **Inicialización:** El sistema requiere la configuración previa de categorías y proveedores para mantener la integridad referencial.
 2.  **Registro de Activos:** Al ingresar productos, el sistema optimiza automáticamente las imágenes adjuntas.
